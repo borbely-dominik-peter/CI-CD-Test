@@ -1,18 +1,28 @@
 name: Docker Image CI
 
-on:
-  push:
+on: # whwn the action should run
+  push: # master gets pushed to
     branches: [ "master" ]
-  pull_request:
+  pull_request: # master gets pulled into
     branches: [ "master" ]
+  workflow_dispatch: # allows manual launch
+  # timed launch
+  #schedule: # launches on set intervals, using cron
+  #  - cron: '04 10 * * *'
 
-jobs:
+jobs: # what it does
 
   build:
 
     runs-on: ubuntu-latest
 
     steps:
+    - name: generate image tag
+    - run: | # multiline run is via pipe
+      echo "IMAGE_TAG=$(date +%s)" >> $GITHUB_ENV # stroe in github's env vars
     - uses: actions/checkout@v4
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      run: |
+        docker build . --file Dockerfile --tag ghcr.io/borbely-dominik-peter/cicd-teszt:$IMAGE_TAG
+        docker login ghcr.io -u borbely-dominik-peter -p ${{ secrets.GHCR_TOKEN}}
+        docker push ghcr.io/borbely-dominik-peter/cicd-teszt:$IMAGE_TAG
